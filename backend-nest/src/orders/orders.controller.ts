@@ -1,7 +1,6 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Param, UseGuards, Req } from '@nestjs/common';
 import { Request } from 'express';
 import { OrdersService } from './orders.service.js';
-import { CreateOrderDto } from './dto/create-order.dto.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 
 interface RequestWithUser extends Request {
@@ -14,8 +13,8 @@ export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Post()
-  create(@Req() req: RequestWithUser, @Body() createOrderDto: CreateOrderDto) {
-    return this.ordersService.create(req.user.sub, createOrderDto);
+  create(@Req() req: RequestWithUser) {
+    return this.ordersService.create(req.user.sub);
   }
 
   @Get()
