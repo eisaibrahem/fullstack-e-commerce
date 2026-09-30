@@ -11,7 +11,15 @@ function parseCorsOrigins(): string[] {
   return raw.split(',').map((o) => o.trim().replace(/\/+$/, '')).filter(Boolean);
 }
 
+function assertRequiredEnv(): void {
+  const missing = ['DATABASE_URL', 'JWT_SECRET'].filter((key) => !process.env[key]?.trim());
+  if (missing.length > 0) {
+    throw new Error(`Missing required environment variable(s): ${missing.join(', ')}`);
+  }
+}
+
 async function bootstrap() {
+  assertRequiredEnv();
   const app = await NestFactory.create(AppModule);
   app.enableCors({
     origin: parseCorsOrigins(),
@@ -21,4 +29,8 @@ async function bootstrap() {
   app.useGlobalInterceptors(new TransformInterceptor());
   await app.listen(process.env.PORT ?? 3003);
 }
-await bootstrap();
+
+await bootstrap().catch((error: unknown) => {
+  console.error('Nest bootstrap failed:', error);
+  process.exit(1);
+});

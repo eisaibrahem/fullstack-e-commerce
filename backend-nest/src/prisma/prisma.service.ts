@@ -6,7 +6,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
   private readonly logger = new Logger(PrismaService.name);
 
   async onModuleInit() {
-    const maxAttempts = 5;
+    const maxAttempts = process.env.VERCEL ? 2 : 5;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         await this.$connect();
@@ -15,7 +15,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
         if (attempt === maxAttempts) {
           throw error;
         }
-        const delayMs = 2000 * attempt;
+        const delayMs = process.env.VERCEL ? 500 * attempt : 2000 * attempt;
         this.logger.warn(
           `Database unreachable (attempt ${attempt}/${maxAttempts}). Retrying in ${delayMs}ms…`,
         );
