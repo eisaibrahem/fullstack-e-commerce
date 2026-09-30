@@ -1,9 +1,9 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Req } from '@nestjs/common';
 import { Request } from 'express';
-import { CartService } from './cart.service.js';
-import { AddToCartDto } from './dto/add-to-cart.dto.js';
-import { UpdateCartItemDto } from './dto/update-cart-item.dto.js';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { CartService } from './cart.service';
+import { AddToCartDto } from './dto/add-to-cart.dto';
+import { UpdateCartItemDto } from './dto/update-cart-item.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 interface RequestWithUser extends Request {
   user: { sub: number; email: string; role: string };

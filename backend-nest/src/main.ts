@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module.js';
+import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { TransformInterceptor } from './users/transform/transform.interceptor.js';
+import { TransformInterceptor } from './users/transform/transform.interceptor';
 
 function parseCorsOrigins(): string[] {
   const raw = process.env.CORS_ORIGIN;
@@ -31,7 +31,7 @@ async function bootstrap() {
   await app.listen(port, '0.0.0.0');
 }
 
-await bootstrap().catch((error: unknown) => {
+bootstrap().catch((error: unknown) => {
   console.error('Nest bootstrap failed:', error);
   process.exit(1);
 });

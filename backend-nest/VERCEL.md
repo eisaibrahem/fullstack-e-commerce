@@ -19,9 +19,9 @@ Set in **Vercel → Project → Settings → Environment Variables** for Product
 
 After changing env vars, redeploy the project.
 
-## ESM on Vercel
+## Node module format
 
-This app uses `"type": "module"`. `@nestjs/throttler` is not loaded in `AppModule` because its CommonJS build triggers `ERR_REQUIRE_ESM` on Vercel’s Node runtime. Rate limiting can be reintroduced via a Vercel-compatible approach or at the edge (Firewall) if needed.
+The backend builds as **CommonJS** (no `"type": "module"`) so Vercel’s Node runtime can load Nest and dependencies reliably. `@nestjs/throttler` was removed because it triggered `ERR_REQUIRE_ESM` when mixed with ESM Nest packages.
 
 ## Frontend
 
