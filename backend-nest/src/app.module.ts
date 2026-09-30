@@ -1,13 +1,13 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { RequestLoggerMiddleware } from './middleware/request-logger.middleware';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { UsersModule } from './users/users.module';
-import { PrismaModule } from './prisma/prisma.module';
-import { ProductsModule } from './products/products.module';
-import { OrdersModule } from './orders/orders.module';
-import { CartModule } from './cart/cart.module';
-import { AuthModule } from './auth/auth.module';
+import { RequestLoggerMiddleware } from './middleware/request-logger.middleware.js';
+import { AppController } from './app.controller.js';
+import { AppService } from './app.service.js';
+import { UsersModule } from './users/users.module.js';
+import { PrismaModule } from './prisma/prisma.module.js';
+import { ProductsModule } from './products/products.module.js';
+import { OrdersModule } from './orders/orders.module.js';
+import { CartModule } from './cart/cart.module.js';
+import { AuthModule } from './auth/auth.module.js';
 
 @Module({
   imports: [
