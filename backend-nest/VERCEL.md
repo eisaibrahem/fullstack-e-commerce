@@ -19,6 +19,14 @@ Set in **Vercel → Project → Settings → Environment Variables** for Product
 
 After changing env vars, redeploy the project.
 
+**Security:** If database credentials or `JWT_SECRET` were ever shared outside Vercel, rotate the Neon password and generate a new `JWT_SECRET`, then update these variables and redeploy.
+
+## Node runtime
+
+`package.json` sets `"engines": { "node": "22.x" }` so Vercel does not run Node 24 (which can worsen ESM/CJS interop). `.npmrc` enables `node-options=--experimental-require-module` for remaining CJS dependencies.
+
+Prisma `binaryTargets` includes `rhel-openssl-3.0.x` for the Vercel function runtime (see `prisma/schema.prisma`).
+
 ## ESM on Vercel
 
 This app uses `"type": "module"`. `@nestjs/throttler` is not loaded in `AppModule` because its CommonJS build triggers `ERR_REQUIRE_ESM` on Vercel’s Node runtime. Rate limiting can be reintroduced via a Vercel-compatible approach or at the edge (Firewall) if needed.

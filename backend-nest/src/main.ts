@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { ValidationPipe } from '@nestjs/common';
@@ -19,6 +20,7 @@ function assertRequiredEnv(): void {
 }
 
 async function bootstrap() {
+  console.log('[nest] bootstrap start', { node: process.version, vercel: process.env.VERCEL });
   assertRequiredEnv();
   const app = await NestFactory.create(AppModule);
   app.enableCors({
@@ -27,11 +29,12 @@ async function bootstrap() {
   });
   app.useGlobalPipes(new ValidationPipe());
   app.useGlobalInterceptors(new TransformInterceptor());
-  const port = Number(process.env.PORT ?? 3003);
+  const port = Number(process.env.PORT ?? 3000);
   await app.listen(port, '0.0.0.0');
+  console.log('[nest] listening on port', port);
 }
 
-await bootstrap().catch((error: unknown) => {
+bootstrap().catch((error: unknown) => {
   console.error('Nest bootstrap failed:', error);
   process.exit(1);
 });
