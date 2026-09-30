@@ -27,6 +27,7 @@ export class AuthService {
       data: {
         email: registerDto.email,
         password: hashedPassword,
+        role: registerDto.role,
       },
     });
 
@@ -52,6 +53,7 @@ export class AuthService {
     const payload = { sub: user.id, email: user.email, role: user.role };
     const accessToken = this.jwtService.sign(payload);
 
-    return { accessToken };
+    const { password, ...result } = user;
+    return { accessToken, user: result };
   }
 }
