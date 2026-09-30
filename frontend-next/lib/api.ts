@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3003";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://fullstack-e-commerce-beta.vercel.app/";
 
 const client = axios.create({
   baseURL: API_URL,
