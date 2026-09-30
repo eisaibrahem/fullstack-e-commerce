@@ -27,7 +27,8 @@ async function bootstrap() {
   });
   app.useGlobalPipes(new ValidationPipe());
   app.useGlobalInterceptors(new TransformInterceptor());
-  await app.listen(process.env.PORT ?? 3003);
+  const port = Number(process.env.PORT ?? 3003);
+  await app.listen(port, '0.0.0.0');
 }
 
 await bootstrap().catch((error: unknown) => {
