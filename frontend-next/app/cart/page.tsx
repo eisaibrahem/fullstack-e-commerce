@@ -1,75 +1,92 @@
 "use client";
 
-import { useState } from "react";
-import { api } from "@/lib/api";
+import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { removeItem, updateQuantity, clearCart } from "@/store/cartSlice";
+import { fetchCart, updateCartItem, removeFromCart, clearCart } from "@/store/cartSlice";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, Minus, Plus } from "lucide-react";
+import { Trash2, Minus, Plus, ShoppingCart } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Spinner } from "@/components/Spinner";
+import { ProductImage } from "@/components/ProductImage";
 
 export default function CartPage() {
-  const { items } = useAppSelector((state) => state.cart);
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
+  const { items, status, error } = useAppSelector((state) => state.cart);
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [orderStatus, setOrderStatus] = useState<"idle" | "loading" | "rejected">("idle");
 
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+    dispatch(fetchCart());
+  }, [isAuthenticated, dispatch, router]);
+
+  const total = items.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0);
 
   const handlePlaceOrder = async () => {
-    setError("");
     setSuccess("");
-    setLoading(true);
-
+    setOrderStatus("loading");
     try {
-      await api("/orders", {
-        method: "POST",
-        body: JSON.stringify({
-          items: items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-          })),
-        }),
-      });
+      const { api } = await import("@/lib/api");
+      await api("/orders", { method: "POST" });
       dispatch(clearCart());
       setSuccess("Order placed successfully!");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to place order");
+      setSuccess(err instanceof Error ? err.message : "Failed to place order");
+      setOrderStatus("rejected");
     } finally {
-      setLoading(false);
+      setOrderStatus("idle");
     }
   };
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated) return null;
+
+  if (status === "loading") {
     return (
-      <div className="text-center py-12">
-        <p className="text-zinc-500 mb-4">Please login to view your cart</p>
-        <Button onClick={() => router.push("/login")}>Go to Login</Button>
+      <div className="flex items-center justify-center py-12">
+        <Spinner className="w-8 h-8 text-zinc-400" />
       </div>
     );
   }
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Shopping Cart</h1>
+      <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        Shopping Cart
+      </h1>
 
-      {error && <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md mb-4">{error}</div>}
-      {success && <div className="p-3 text-sm text-green-600 bg-green-50 rounded-md mb-4">{success}</div>}
+      {status === "rejected" && error && (
+        <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md mb-4">{error}</div>
+      )}
+      {success && (
+        <div className={`p-3 text-sm rounded-md mb-4 ${success.includes("successfully") ? "text-green-600 bg-green-50" : "text-red-600 bg-red-50"}`}>
+          {success}
+        </div>
+      )}
 
       {items.length === 0 ? (
-        <p className="text-zinc-500">Your cart is empty.</p>
+        <div className="text-center py-12">
+          <ShoppingCart className="w-16 h-16 text-zinc-300 mx-auto mb-4" />
+          <p className="text-zinc-500">Your cart is empty.</p>
+        </div>
       ) : (
         <div className="space-y-4">
           {items.map((item) => (
-            <Card key={item.productId}>
-              <CardContent className="p-4 flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">{item.name}</h3>
-                  <p className="text-sm text-zinc-500">${item.price.toFixed(2)} each</p>
+            <Card key={item.productId} className="shadow-md border-0 hover:shadow-lg transition-shadow">
+              <CardContent className="p-4 flex items-center gap-4">
+                <ProductImage
+                  src={item.product.image}
+                  alt={item.product.name}
+                  className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
+                />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg">{item.product.name}</h3>
+                  <p className="text-sm text-zinc-500">${Number(item.product.price).toFixed(2)} each</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2">
@@ -78,25 +95,25 @@ export default function CartPage() {
                       size="sm"
                       onClick={() => {
                         if (item.quantity <= 1) {
-                          dispatch(removeItem(item.productId));
+                          dispatch(removeFromCart(item.productId));
                         } else {
-                          dispatch(updateQuantity({ productId: item.productId, quantity: item.quantity - 1 }));
+                          dispatch(updateCartItem({ productId: item.productId, quantity: item.quantity - 1 }));
                         }
                       }}
                     >
                       <Minus className="w-3 h-3" />
                     </Button>
-                    <span className="w-8 text-center">{item.quantity}</span>
+                    <span className="w-8 text-center font-medium">{item.quantity}</span>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => dispatch(updateQuantity({ productId: item.productId, quantity: item.quantity + 1 }))}
+                      onClick={() => dispatch(updateCartItem({ productId: item.productId, quantity: item.quantity + 1 }))}
                     >
                       <Plus className="w-3 h-3" />
                     </Button>
                   </div>
-                  <p className="font-medium w-20 text-right">${(item.price * item.quantity).toFixed(2)}</p>
-                  <Button variant="destructive" size="sm" onClick={() => dispatch(removeItem(item.productId))}>
+                  <p className="font-semibold w-24 text-right">${(Number(item.product.price) * item.quantity).toFixed(2)}</p>
+                  <Button variant="destructive" size="sm" onClick={() => dispatch(removeFromCart(item.productId))}>
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
@@ -104,17 +121,30 @@ export default function CartPage() {
             </Card>
           ))}
 
-          <Card>
+          <Card className="shadow-lg border-0">
             <CardHeader>
               <CardTitle className="text-lg">Order Summary</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between mb-4">
                 <span className="text-lg font-medium">Total</span>
-                <span className="text-2xl font-bold">${total.toFixed(2)}</span>
+                <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  ${Number(total).toFixed(2)}
+                </span>
               </div>
-              <Button className="w-full" onClick={handlePlaceOrder} disabled={loading}>
-                {loading ? "Placing order..." : "Place Order"}
+              <Button
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-300"
+                onClick={handlePlaceOrder}
+                disabled={orderStatus === "loading"}
+              >
+                {orderStatus === "loading" ? (
+                  <span className="flex items-center gap-2">
+                    <Spinner className="w-4 h-4" />
+                    Placing order...
+                  </span>
+                ) : (
+                  "Place Order"
+                )}
               </Button>
             </CardContent>
           </Card>

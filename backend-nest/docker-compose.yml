@@ -1,0 +1,31 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ecommerce
+      POSTGRES_PASSWORD: ecommerce_secret
+      POSTGRES_DB: ecommerce_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ecommerce"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: .
+    ports:
+      - "3003:3003"
+    environment:
+      DATABASE_URL: postgresql://ecommerce:ecommerce_secret@postgres:5432/ecommerce_db
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      PORT: 3003
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

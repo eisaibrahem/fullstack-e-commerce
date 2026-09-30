@@ -1,34 +1,32 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { CreateOrderDto } from './dto/create-order.dto.js';
 
 @Injectable()
 export class OrdersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(userId: number, createOrderDto: CreateOrderDto) {
-    const productIds = createOrderDto.items.map((item) => item.productId);
-    const products = await this.prisma.product.findMany({
-      where: { id: { in: productIds } },
+  async create(userId: number) {
+    const cart = await this.prisma.cart.findUnique({
+      where: { userId },
+      include: { items: { include: { product: true } } },
     });
 
-    if (products.length !== productIds.length) {
-      throw new BadRequestException('One or more products do not exist');
+    if (!cart || cart.items.length === 0) {
+      throw new BadRequestException('Cart is empty');
     }
 
-    for (const item of createOrderDto.items) {
-      const product = products.find((p) => p.id === item.productId)!;
-      if (product.stock < item.quantity) {
+    for (const item of cart.items) {
+      if (item.product.stock < item.quantity) {
         throw new BadRequestException(
-          `Insufficient stock for "${product.name}". Available: ${product.stock}, requested: ${item.quantity}`,
+          `Insufficient stock for "${item.product.name}". Available: ${item.product.stock}, requested: ${item.quantity}`,
         );
       }
     }
 
-    const total = products.reduce((sum, product) => {
-      const item = createOrderDto.items.find((i) => i.productId === product.id)!;
-      return sum + product.price.toNumber() * item.quantity;
-    }, 0);
+    const total = cart.items.reduce(
+      (sum, item) => sum + item.product.price.toNumber() * item.quantity,
+      0,
+    );
 
     const order = await this.prisma.$transaction(async (tx) => {
       const created = await tx.order.create({
@@ -36,22 +34,26 @@ export class OrdersService {
           userId,
           total,
           items: {
-            create: createOrderDto.items.map((item) => ({
+            create: cart.items.map((item) => ({
               productId: item.productId,
               quantity: item.quantity,
-              price: products.find((p) => p.id === item.productId)!.price,
+              price: item.product.price,
             })),
           },
         },
         include: { items: true },
       });
 
-      for (const item of createOrderDto.items) {
+      for (const item of cart.items) {
         await tx.product.update({
           where: { id: item.productId },
           data: { stock: { decrement: item.quantity } },
         });
       }
+
+      await tx.cartItem.deleteMany({
+        where: { cartId: cart.id },
+      });
 
       return created;
     });
