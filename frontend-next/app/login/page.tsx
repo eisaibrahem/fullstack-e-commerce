@@ -24,16 +24,12 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const data = await api<{ accessToken: string }>("/auth/login", {
+      const data = await api<{ accessToken: string; user: { id: number; email: string; role: string } }>("/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
 
-      const userRes = await api<{ id: number; email: string; role: string }>("/users", {
-        method: "GET",
-      });
-
-      dispatch(setCredentials({ token: data.accessToken, user: userRes }));
+      dispatch(setCredentials({ token: data.accessToken, user: data.user }));
       router.push("/products");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed");

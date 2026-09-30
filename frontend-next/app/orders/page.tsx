@@ -66,13 +66,13 @@ export default function OrdersPage() {
                   {order.items.map((item) => (
                     <div key={item.id} className="flex justify-between text-sm">
                       <span>Product #{item.productId} x{item.quantity}</span>
-                      <span>${(item.price * item.quantity).toFixed(2)}</span>
+                      <span>${(Number(item.price) * item.quantity).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
                 <div className="border-t mt-3 pt-3 flex justify-between font-medium">
                   <span>Total</span>
-                  <span>${order.total.toFixed(2)}</span>
+                  <span>${Number(order.total).toFixed(2)}</span>
                 </div>
               </CardContent>
             </Card>

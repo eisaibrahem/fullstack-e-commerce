@@ -151,7 +151,7 @@ export default function AdminProductsPage() {
                   <TableRow key={product.id}>
                     <TableCell>{product.id}</TableCell>
                     <TableCell>{product.name}</TableCell>
-                    <TableCell>${product.price.toFixed(2)}</TableCell>
+                    <TableCell>${Number(product.price).toFixed(2)}</TableCell>
                     <TableCell>{product.stock}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">

@@ -18,7 +18,7 @@ export default function CartPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const total = items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
 
   const handlePlaceOrder = async () => {
     setError("");
@@ -69,7 +69,7 @@ export default function CartPage() {
               <CardContent className="p-4 flex items-center justify-between">
                 <div>
                   <h3 className="font-medium">{item.name}</h3>
-                  <p className="text-sm text-zinc-500">${item.price.toFixed(2)} each</p>
+                  <p className="text-sm text-zinc-500">${Number(item.price).toFixed(2)} each</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2">
@@ -95,7 +95,7 @@ export default function CartPage() {
                       <Plus className="w-3 h-3" />
                     </Button>
                   </div>
-                  <p className="font-medium w-20 text-right">${(item.price * item.quantity).toFixed(2)}</p>
+                  <p className="font-medium w-20 text-right">${(Number(item.price) * item.quantity).toFixed(2)}</p>
                   <Button variant="destructive" size="sm" onClick={() => dispatch(removeItem(item.productId))}>
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -111,7 +111,7 @@ export default function CartPage() {
             <CardContent>
               <div className="flex items-center justify-between mb-4">
                 <span className="text-lg font-medium">Total</span>
-                <span className="text-2xl font-bold">${total.toFixed(2)}</span>
+                <span className="text-2xl font-bold">${Number(total).toFixed(2)}</span>
               </div>
               <Button className="w-full" onClick={handlePlaceOrder} disabled={loading}>
                 {loading ? "Placing order..." : "Place Order"}

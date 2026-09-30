@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState<"USER" | "ADMIN">("USER");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -26,15 +27,15 @@ export default function RegisterPage() {
     try {
       const user = await api<{ id: number; email: string; role: string }>("/auth/register", {
         method: "POST",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, role }),
       });
 
-      const loginData = await api<{ accessToken: string }>("/auth/login", {
+      const loginData = await api<{ accessToken: string; user: { id: number; email: string; role: string } }>("/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
 
-      dispatch(setCredentials({ token: loginData.accessToken, user }));
+      dispatch(setCredentials({ token: loginData.accessToken, user: loginData.user }));
       router.push("/products");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registration failed");
@@ -76,6 +77,18 @@ export default function RegisterPage() {
                 required
               />
               <p className="text-xs text-zinc-500">Minimum 8 characters</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">Role</Label>
+              <select
+                id="role"
+                value={role}
+                onChange={(e) => setRole(e.target.value as "USER" | "ADMIN")}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <option value="USER">User</option>
+                <option value="ADMIN">Admin</option>
+              </select>
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Creating account..." : "Register"}

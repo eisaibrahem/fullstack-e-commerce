@@ -50,7 +50,7 @@ export default function ProductsPage() {
                 <CardDescription>Stock: {product.stock}</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold">${product.price.toFixed(2)}</p>
+                <p className="text-2xl font-bold">${Number(product.price).toFixed(2)}</p>
               </CardContent>
               <CardFooter>
                 {isAuthenticated ? (
