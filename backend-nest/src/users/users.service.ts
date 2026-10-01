@@ -56,7 +56,6 @@ export class UsersService {
         image: true,
         address: true,
         role: true,
-        createdAt: true,
       },
     });
 
@@ -93,7 +92,6 @@ export class UsersService {
         image: true,
         address: true,
         role: true,
-        createdAt: true,
       },
     });
 
