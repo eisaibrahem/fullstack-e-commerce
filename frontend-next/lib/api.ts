@@ -1,7 +1,7 @@
 import axios from "axios";
 import { emitUnauthorized } from "./auth-events";
 
-const RAW_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3003";
+const RAW_API_URL = "https://fullstack-e-commerce-beta.vercel.app/";
 const API_URL = RAW_API_URL.replace(/\/+$/, "");
 
 const client = axios.create({
