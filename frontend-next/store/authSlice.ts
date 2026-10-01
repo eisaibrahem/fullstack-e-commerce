@@ -11,6 +11,7 @@ interface User {
 
 interface AuthState {
   token: string | null;
+  refreshToken: string | null;
   user: User | null;
   isAuthenticated: boolean;
   status: "idle" | "loading" | "fulfilled" | "rejected";
@@ -19,6 +20,7 @@ interface AuthState {
 
 const initialState: AuthState = {
   token: null,
+  refreshToken: null,
   user: null,
   isAuthenticated: false,
   status: "idle",
@@ -29,7 +31,7 @@ export const login = createAsyncThunk(
   "auth/login",
   async (credentials: { email: string; password: string }, { rejectWithValue }) => {
     try {
-      return await api<{ accessToken: string; user: User }>("/auth/login", {
+      return await api<{ accessToken: string; refreshToken: string; user: User }>("/auth/login", {
         method: "POST",
         body: JSON.stringify(credentials),
       });
@@ -47,7 +49,7 @@ export const register = createAsyncThunk(
         method: "POST",
         body: JSON.stringify(data),
       });
-      return await api<{ accessToken: string; user: User }>("/auth/login", {
+      return await api<{ accessToken: string; refreshToken: string; user: User }>("/auth/login", {
         method: "POST",
         body: JSON.stringify({ email: data.email, password: data.password }),
       });
@@ -63,18 +65,22 @@ const authSlice = createSlice({
   reducers: {
     logout: (state) => {
       state.token = null;
+      state.refreshToken = null;
       state.user = null;
       state.isAuthenticated = false;
       state.status = "idle";
       state.error = null;
       localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
       localStorage.removeItem("user");
     },
     loadFromStorage: (state) => {
       const token = localStorage.getItem("token");
+      const refreshToken = localStorage.getItem("refreshToken");
       const userStr = localStorage.getItem("user");
-      if (token && userStr) {
+      if (token && refreshToken && userStr) {
         state.token = token;
+        state.refreshToken = refreshToken;
         state.user = JSON.parse(userStr);
         state.isAuthenticated = true;
       }
@@ -86,12 +92,14 @@ const authSlice = createSlice({
         state.status = "loading";
         state.error = null;
       })
-      .addCase(login.fulfilled, (state, action: PayloadAction<{ accessToken: string; user: User }>) => {
+      .addCase(login.fulfilled, (state, action: PayloadAction<{ accessToken: string; refreshToken: string; user: User }>) => {
         state.status = "fulfilled";
         state.token = action.payload.accessToken;
+        state.refreshToken = action.payload.refreshToken;
         state.user = action.payload.user;
         state.isAuthenticated = true;
         localStorage.setItem("token", action.payload.accessToken);
+        localStorage.setItem("refreshToken", action.payload.refreshToken);
         localStorage.setItem("user", JSON.stringify(action.payload.user));
       })
       .addCase(login.rejected, (state, action) => {
@@ -102,12 +110,14 @@ const authSlice = createSlice({
         state.status = "loading";
         state.error = null;
       })
-      .addCase(register.fulfilled, (state, action: PayloadAction<{ accessToken: string; user: User }>) => {
+      .addCase(register.fulfilled, (state, action: PayloadAction<{ accessToken: string; refreshToken: string; user: User }>) => {
         state.status = "fulfilled";
         state.token = action.payload.accessToken;
+        state.refreshToken = action.payload.refreshToken;
         state.user = action.payload.user;
         state.isAuthenticated = true;
         localStorage.setItem("token", action.payload.accessToken);
+        localStorage.setItem("refreshToken", action.payload.refreshToken);
         localStorage.setItem("user", JSON.stringify(action.payload.user));
       })
       .addCase(register.rejected, (state, action) => {
