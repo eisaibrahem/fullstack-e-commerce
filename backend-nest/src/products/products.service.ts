@@ -16,7 +16,9 @@ export class ProductsService {
   }
 
   findAll() {
-    return this.prisma.product.findMany();
+    return this.prisma.product.findMany({
+      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+    });
   }
 
   findOne(id: number) {

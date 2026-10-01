@@ -93,11 +93,11 @@ const productsSlice = createSlice({
         state.error = action.payload as string;
       })
       .addCase(createProduct.fulfilled, (state, action: PayloadAction<Product>) => {
-        state.items.push(action.payload);
+        state.items.unshift(action.payload);
       })
       .addCase(updateProduct.fulfilled, (state, action: PayloadAction<Product>) => {
-        const index = state.items.findIndex((p) => p.id === action.payload.id);
-        if (index !== -1) state.items[index] = action.payload;
+        state.items = state.items.filter((p) => p.id !== action.payload.id);
+        state.items.unshift(action.payload);
       })
       .addCase(deleteProduct.fulfilled, (state, action: PayloadAction<number>) => {
         state.items = state.items.filter((p) => p.id !== action.payload);

@@ -78,3 +78,25 @@
 
 ## Future Phases (Not Started)
 - Frontend (Next.js)
+
+---
+
+## Frontend Structure Refactor (Complete)
+- [x] All 8 routes colocated into _components/ folders (13 components extracted)
+- [x] Pages keep data/Redux wiring, components own UI + local state
+- [x] Build passes
+
+## Upload & Auth Bug Fixes (Complete)
+- [x] FileInterceptor uses memoryStorage() on product + profile image uploads (file.buffer guaranteed)
+- [x] Upload size limit 4MB (Vercel body cap)
+- [x] CloudinaryService: fail-fast on missing env, real error messages logged
+- [x] refreshToken() now includes role in JWT payload (was dropping role -> 403 "Requires role: ADMIN")
+- [x] ProductImage: sizing classes applied to wrapper (fill image was collapsing to 0px)
+
+## Product Ordering + Filters (Complete)
+- [x] Product model: createdAt/updatedAt columns, migration 20261001144918 applied to Neon
+- [x] GET /products ordered by updatedAt desc, id desc (created/updated items first)
+- [x] Redux: create -> unshift, update -> move to front (instant, before refetch)
+- [x] Shared ProductFilters component: search, sort, min/max price, in-stock only, reset
+- [x] Wired into public /products and admin /admin/products (client-side filtering)
+- [x] Backend + frontend builds pass

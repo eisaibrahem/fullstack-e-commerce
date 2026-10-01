@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchProducts, createProduct, updateProduct, deleteProduct } from "@/store/productsSlice";
 import type { Product } from "@/store/productsSlice";
@@ -12,6 +12,8 @@ import { ProductFormDialog } from "./_components/ProductFormDialog";
 import type { ProductFormValues } from "./_components/ProductFormDialog";
 import { ProductsTable } from "./_components/ProductsTable";
 import { ImageUploadModal } from "./_components/ImageUploadModal";
+import { ProductFilters, filterProducts, defaultProductFilters } from "@/components/ProductFilters";
+import type { ProductFiltersValue } from "@/components/ProductFilters";
 
 export default function AdminProductsPage() {
   const dispatch = useAppDispatch();
@@ -22,9 +24,12 @@ export default function AdminProductsPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [actionStatus, setActionStatus] = useState<"idle" | "loading" | "rejected">("idle");
   const [actionError, setActionError] = useState("");
+  const [filters, setFilters] = useState<ProductFiltersValue>({ ...defaultProductFilters });
 
   const [imageModalProduct, setImageModalProduct] = useState<{ id: number; name: string } | null>(null);
   const [deletingImageId, setDeletingImageId] = useState<number | null>(null);
+
+  const visibleProducts = useMemo(() => filterProducts(products, filters), [products, filters]);
 
   useEffect(() => {
     if (user?.role !== "ADMIN") return;
@@ -123,15 +128,23 @@ export default function AdminProductsPage() {
         onSubmit={handleSubmit}
       />
 
-      <ProductsTable
-        products={products}
-        busyAction={actionStatus === "loading"}
-        deletingImageId={deletingImageId}
-        onEdit={(product) => { setEditingProduct(product); setActionError(""); setFormOpen(true); }}
-        onUploadImage={(product) => setImageModalProduct({ id: product.id, name: product.name })}
-        onDeleteImage={handleDeleteImage}
-        onDelete={handleDelete}
-      />
+      <ProductFilters value={filters} onChange={setFilters} />
+
+      {visibleProducts.length === 0 ? (
+        <p className="text-zinc-500">
+          {products.length === 0 ? "No products yet." : "No products match your filters."}
+        </p>
+      ) : (
+        <ProductsTable
+          products={visibleProducts}
+          busyAction={actionStatus === "loading"}
+          deletingImageId={deletingImageId}
+          onEdit={(product) => { setEditingProduct(product); setActionError(""); setFormOpen(true); }}
+          onUploadImage={(product) => setImageModalProduct({ id: product.id, name: product.name })}
+          onDeleteImage={handleDeleteImage}
+          onDelete={handleDelete}
+        />
+      )}
 
       {imageModalProduct && (
         <ImageUploadModal
