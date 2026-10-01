@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 
 const gradients = [
@@ -46,12 +47,15 @@ export function ProductImage({
   }
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={src}
-      alt={alt}
-      className={className}
-      onError={() => setError(true)}
-    />
+    <div className="relative w-full h-full">
+      <Image
+        src={src}
+        width={100}
+        height={100}
+        alt={alt}
+        className={`w-full h-full object-cover ${className}`}
+        onError={() => setError(true)}
+      />
+    </div>
   );
 }
