@@ -3,12 +3,11 @@
 import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchCart, updateCartItem, removeFromCart, clearCart } from "@/store/cartSlice";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, Minus, Plus, ShoppingCart } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { ShoppingCart } from "lucide-react";
 import { Spinner } from "@/components/Spinner";
-import { ProductImage } from "@/components/ProductImage";
+import { CartItemCard } from "./_components/CartItemCard";
+import { OrderSummary } from "./_components/OrderSummary";
 
 export default function CartPage() {
   const dispatch = useAppDispatch();
@@ -93,79 +92,27 @@ export default function CartPage() {
       ) : (
         <div className="space-y-4">
           {items.map((item) => (
-            <Card key={item.productId} className="shadow-md border-0 hover:shadow-lg transition-shadow">
-              <CardContent className="p-4 flex items-center gap-4">
-                <ProductImage
-                  src={item.product.image}
-                  alt={item.product.name}
-                  className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
-                />
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg">{item.product.name}</h3>
-                  <p className="text-sm text-zinc-500">${Number(item.product.price).toFixed(2)} each</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={isBusy(item.productId)}
-                      onClick={() => {
-                        if (item.quantity <= 1) {
-                          runItemAction(item.productId, () => dispatch(removeFromCart(item.productId)).unwrap());
-                        } else {
-                          runItemAction(item.productId, () => dispatch(updateCartItem({ productId: item.productId, quantity: item.quantity - 1 })).unwrap());
-                        }
-                      }}
-                    >
-                      {isBusy(item.productId) ? <Spinner className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
-                    </Button>
-                    <span className="w-8 text-center font-medium">{item.quantity}</span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={isBusy(item.productId)}
-                      onClick={() => runItemAction(item.productId, () => dispatch(updateCartItem({ productId: item.productId, quantity: item.quantity + 1 })).unwrap())}
-                    >
-                      {isBusy(item.productId) ? <Spinner className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
-                    </Button>
-                  </div>
-                  <p className="font-semibold w-24 text-right">${(Number(item.product.price) * item.quantity).toFixed(2)}</p>
-                  <Button variant="destructive" size="sm" disabled={isBusy(item.productId)} onClick={() => runItemAction(item.productId, () => dispatch(removeFromCart(item.productId)).unwrap())}>
-                    {isBusy(item.productId) ? <Spinner className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <CartItemCard
+              key={item.productId}
+              item={item}
+              busy={isBusy(item.productId)}
+              onDecrement={() => {
+                if (item.quantity <= 1) {
+                  runItemAction(item.productId, () => dispatch(removeFromCart(item.productId)).unwrap());
+                } else {
+                  runItemAction(item.productId, () => dispatch(updateCartItem({ productId: item.productId, quantity: item.quantity - 1 })).unwrap());
+                }
+              }}
+              onIncrement={() => runItemAction(item.productId, () => dispatch(updateCartItem({ productId: item.productId, quantity: item.quantity + 1 })).unwrap())}
+              onRemove={() => runItemAction(item.productId, () => dispatch(removeFromCart(item.productId)).unwrap())}
+            />
           ))}
 
-          <Card className="shadow-lg border-0">
-            <CardHeader>
-              <CardTitle className="text-lg">Order Summary</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-lg font-medium">Total</span>
-                <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  ${Number(total).toFixed(2)}
-                </span>
-              </div>
-              <Button
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-300"
-                onClick={handlePlaceOrder}
-                disabled={orderStatus === "loading"}
-              >
-                {orderStatus === "loading" ? (
-                  <span className="flex items-center gap-2">
-                    <Spinner className="w-4 h-4" />
-                    Placing order...
-                  </span>
-                ) : (
-                  "Place Order"
-                )}
-              </Button>
-            </CardContent>
-          </Card>
+          <OrderSummary
+            total={total}
+            placing={orderStatus === "loading"}
+            onPlaceOrder={handlePlaceOrder}
+          />
         </div>
       )}
     </div>

@@ -45,7 +45,7 @@ export function Navbar() {
                 <span className="relative">
                   <ShoppingCart className="w-4 h-4" />
                   {cartCount > 0 && (
-                    <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
+                    <span className="absolute -top-2 -inset-s-2 min-w-4 h-4 px-1 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
                       {cartCount}
                     </span>
                   )}

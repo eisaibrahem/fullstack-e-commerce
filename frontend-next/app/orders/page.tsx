@@ -3,9 +3,9 @@
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchOrders } from "@/store/ordersSlice";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/Spinner";
+import { OrderCard } from "./_components/OrderCard";
 
 export default function OrdersPage() {
   const dispatch = useAppDispatch();
@@ -44,30 +44,7 @@ export default function OrdersPage() {
       ) : (
         <div className="space-y-4">
           {orders.map((order) => (
-            <Card key={order.id}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Order #{order.id}</CardTitle>
-                  <span className="text-sm text-zinc-500">
-                    {new Date(order.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {order.items.map((item) => (
-                    <div key={item.id} className="flex justify-between text-sm">
-                      <span>Product #{item.productId} x{item.quantity}</span>
-                      <span>${(Number(item.price) * item.quantity).toFixed(2)}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="border-t mt-3 pt-3 flex justify-between font-medium">
-                  <span>Total</span>
-                  <span>${Number(order.total).toFixed(2)}</span>
-                </div>
-              </CardContent>
-            </Card>
+            <OrderCard key={order.id} order={order} />
           ))}
         </div>
       )}
