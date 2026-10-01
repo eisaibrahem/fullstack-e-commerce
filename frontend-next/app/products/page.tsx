@@ -49,7 +49,7 @@ export default function ProductsPage() {
           {products.map((product) => (
             <Card
               key={product.id}
-              className="overflow-hidden group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-0 shadow-md"
+              className="overflow-hidden pt-0! group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-0 shadow-md"
             >
               <div className="relative h-48 overflow-hidden">
                 <Link href={`/products/${product.id}`}>
