@@ -122,6 +122,7 @@ export class AuthService {
         {
           sub: user.id,
           email: user.email,
+          role: user.role,
         },
         {
           secret: process.env.JWT_SECRET,
