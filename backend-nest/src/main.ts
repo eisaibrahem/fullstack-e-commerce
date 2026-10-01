@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { ValidationPipe } from '@nestjs/common';
 import { TransformInterceptor } from './users/transform/transform.interceptor.js';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 function parseCorsOrigins(): string[] {
   const raw = process.env.CORS_ORIGIN;
@@ -23,6 +24,19 @@ async function bootstrap() {
   console.log('[nest] bootstrap start', { node: process.version, vercel: process.env.VERCEL });
   assertRequiredEnv();
   const app = await NestFactory.create(AppModule);
+
+  const config = new DocumentBuilder()
+    .setTitle('E-Commerce API')
+    .setDescription('E-Commerce Backend API Documentation')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+
+  SwaggerModule.setup('docs', app, document);
+
+
   app.enableCors({
     origin: parseCorsOrigins(),
     allowedHeaders: ['Content-Type', 'Authorization'],
