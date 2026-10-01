@@ -84,7 +84,9 @@ export function Navbar() {
   }, [isAuthenticated, dispatch]);
 
   useEffect(() => {
-    setMenuOpen(false);
+    setTimeout(() => {
+      setMenuOpen(false);
+    }, 100);
   }, [pathname]);
 
   const handleLogout = () => {
@@ -147,7 +149,7 @@ export function Navbar() {
       </div>
 
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-        <SheetContent side="right" className="w-72">
+        <SheetContent dir="rtl" side="right" className="w-72">
           <SheetHeader>
             <SheetTitle>
               <Link href="/products" onClick={closeMenu} className="font-bold text-lg">
