@@ -14,7 +14,13 @@ function parseCorsOrigins(): string[] {
 }
 
 function assertRequiredEnv(): void {
-  const missing = ['DATABASE_URL', 'JWT_SECRET'].filter((key) => !process.env[key]?.trim());
+  const missing = [
+    'DATABASE_URL',
+    'JWT_SECRET',
+    'CLOUDINARY_CLOUD_NAME',
+    'CLOUDINARY_API_KEY',
+    'CLOUDINARY_API_SECRET',
+  ].filter((key) => !process.env[key]?.trim());
   if (missing.length > 0) {
     throw new Error(`Missing required environment variable(s): ${missing.join(', ')}`);
   }

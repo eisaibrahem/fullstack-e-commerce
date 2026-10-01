@@ -18,6 +18,7 @@ export function ImageUploadModal({ product, onClose, onUploaded }: ImageUploadMo
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "rejected">("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -25,12 +26,14 @@ export function ImageUploadModal({ product, onClose, onUploaded }: ImageUploadMo
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
       setStatus("idle");
+      setErrorMessage(null);
     }
   };
 
   const handleUpload = async () => {
     if (!imageFile) return;
     setStatus("loading");
+    setErrorMessage(null);
     try {
       const formData = new FormData();
       formData.append("image", imageFile);
@@ -40,8 +43,9 @@ export function ImageUploadModal({ product, onClose, onUploaded }: ImageUploadMo
       });
       onUploaded();
       onClose();
-    } catch {
+    } catch (err) {
       setStatus("rejected");
+      setErrorMessage(err instanceof Error ? err.message : "Upload failed. Please try again.");
     }
   };
 
@@ -66,8 +70,8 @@ export function ImageUploadModal({ product, onClose, onUploaded }: ImageUploadMo
             )}
           </div>
           <Input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} />
-          {status === "rejected" && (
-            <p className="text-sm text-red-600">Upload failed. Please try again.</p>
+          {status === "rejected" && errorMessage && (
+            <p className="text-sm text-red-600">{errorMessage}</p>
           )}
           <div className="flex gap-2">
             <Button

@@ -1,5 +1,21 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import {
+  BadGatewayException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { v2 as cloudinary } from 'cloudinary';
+
+function cloudinaryUploadErrorMessage(raw: string | undefined): string {
+  if (!raw?.includes('403')) {
+    return raw ?? 'Unknown Cloudinary error';
+  }
+  return (
+    'Cloudinary rejected the upload: the API key lacks upload (create) permission. ' +
+    'In Cloudinary Console → Settings → API Keys, assign a role with Upload assets, then redeploy. ' +
+    'See backend-nest/CLOUDINARY.md.'
+  );
+}
 
 @Injectable()
 export class CloudinaryService {
@@ -33,8 +49,14 @@ export class CloudinaryService {
         { folder, resource_type: 'image' },
         (error, result) => {
           if (error) {
-            this.logger.error(`Cloudinary upload failed: ${error.message}`, error.stack);
-            reject(new InternalServerErrorException(`Image upload failed: ${error.message}`));
+            const raw = error.message;
+            this.logger.error(`Cloudinary upload failed: ${raw}`, error.stack);
+            const message = `Image upload failed: ${cloudinaryUploadErrorMessage(raw)}`;
+            if (raw?.includes('403')) {
+              reject(new BadGatewayException(message));
+            } else {
+              reject(new InternalServerErrorException(message));
+            }
           } else if (result) {
             resolve({
               url: result.secure_url,
