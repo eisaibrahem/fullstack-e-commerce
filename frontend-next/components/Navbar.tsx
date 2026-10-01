@@ -1,16 +1,27 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { logout } from "@/store/authSlice";
+import { fetchCart } from "@/store/cartSlice";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Package, ClipboardList, LogOut, Shield, User } from "lucide-react";
 
 export function Navbar() {
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+  const { items: cartItems } = useAppSelector((state) => state.cart);
   const dispatch = useAppDispatch();
   const router = useRouter();
+
+  const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchCart());
+    }
+  }, [isAuthenticated, dispatch]);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -31,7 +42,14 @@ export function Navbar() {
           {isAuthenticated && (
             <>
               <Link href="/cart" className="text-sm text-zinc-600 hover:text-zinc-900 flex items-center gap-1">
-                <ShoppingCart className="w-4 h-4" />
+                <span className="relative">
+                  <ShoppingCart className="w-4 h-4" />
+                  {cartCount > 0 && (
+                    <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
+                      {cartCount}
+                    </span>
+                  )}
+                </span>
                 Cart
               </Link>
               <Link href="/orders" className="text-sm text-zinc-600 hover:text-zinc-900 flex items-center gap-1">

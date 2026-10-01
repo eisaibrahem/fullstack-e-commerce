@@ -17,6 +17,22 @@ export default function CartPage() {
   const router = useRouter();
   const [success, setSuccess] = useState("");
   const [orderStatus, setOrderStatus] = useState<"idle" | "loading" | "rejected">("idle");
+  const [busyIds, setBusyIds] = useState<number[]>([]);
+
+  const setBusy = (productId: number, busy: boolean) => {
+    setBusyIds((prev) => (busy ? [...prev, productId] : prev.filter((id) => id !== productId)));
+  };
+
+  const isBusy = (productId: number) => busyIds.includes(productId);
+
+  const runItemAction = async (productId: number, action: () => Promise<unknown>) => {
+    setBusy(productId, true);
+    try {
+      await action();
+    } finally {
+      setBusy(productId, false);
+    }
+  };
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -93,28 +109,30 @@ export default function CartPage() {
                     <Button
                       variant="outline"
                       size="sm"
+                      disabled={isBusy(item.productId)}
                       onClick={() => {
                         if (item.quantity <= 1) {
-                          dispatch(removeFromCart(item.productId));
+                          runItemAction(item.productId, () => dispatch(removeFromCart(item.productId)).unwrap());
                         } else {
-                          dispatch(updateCartItem({ productId: item.productId, quantity: item.quantity - 1 }));
+                          runItemAction(item.productId, () => dispatch(updateCartItem({ productId: item.productId, quantity: item.quantity - 1 })).unwrap());
                         }
                       }}
                     >
-                      <Minus className="w-3 h-3" />
+                      {isBusy(item.productId) ? <Spinner className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
                     </Button>
                     <span className="w-8 text-center font-medium">{item.quantity}</span>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => dispatch(updateCartItem({ productId: item.productId, quantity: item.quantity + 1 }))}
+                      disabled={isBusy(item.productId)}
+                      onClick={() => runItemAction(item.productId, () => dispatch(updateCartItem({ productId: item.productId, quantity: item.quantity + 1 })).unwrap())}
                     >
-                      <Plus className="w-3 h-3" />
+                      {isBusy(item.productId) ? <Spinner className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
                     </Button>
                   </div>
                   <p className="font-semibold w-24 text-right">${(Number(item.product.price) * item.quantity).toFixed(2)}</p>
-                  <Button variant="destructive" size="sm" onClick={() => dispatch(removeFromCart(item.productId))}>
-                    <Trash2 className="w-4 h-4" />
+                  <Button variant="destructive" size="sm" disabled={isBusy(item.productId)} onClick={() => runItemAction(item.productId, () => dispatch(removeFromCart(item.productId)).unwrap())}>
+                    {isBusy(item.productId) ? <Spinner className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />}
                   </Button>
                 </div>
               </CardContent>

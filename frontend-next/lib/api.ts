@@ -1,6 +1,8 @@
 import axios from "axios";
+import { emitUnauthorized } from "./auth-events";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://fullstack-e-commerce-beta.vercel.app/";
+const RAW_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3003";
+const API_URL = RAW_API_URL.replace(/\/+$/, "");
 
 const client = axios.create({
   baseURL: API_URL,
@@ -12,8 +14,18 @@ client.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  if (config.data instanceof FormData) {
+    config.headers.delete("Content-Type");
+  }
   return config;
 });
+
+const AUTH_ENDPOINTS = ["/auth/login", "/auth/register", "/auth/refresh"];
+
+function isAuthEndpoint(url?: string) {
+  if (!url) return false;
+  return AUTH_ENDPOINTS.some((endpoint) => url.includes(endpoint));
+}
 
 let isRefreshing = false;
 let failedQueue: Array<{ resolve: (value: unknown) => void; reject: (reason?: unknown) => void }> = [];
@@ -29,12 +41,22 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue = [];
 };
 
+function clearAuthStorage() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("refreshToken");
+  localStorage.removeItem("user");
+}
+
 client.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isAuthEndpoint(originalRequest.url)
+    ) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -58,6 +80,10 @@ client.interceptors.response.use(
         const response = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
         const { accessToken } = response.data.data || response.data;
 
+        if (!accessToken) {
+          throw new Error("Invalid refresh response");
+        }
+
         localStorage.setItem("token", accessToken);
         client.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
@@ -66,10 +92,8 @@ client.interceptors.response.use(
         return client(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        localStorage.removeItem("token");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("user");
-        window.location.href = "/login";
+        clearAuthStorage();
+        emitUnauthorized();
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

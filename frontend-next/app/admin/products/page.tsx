@@ -12,12 +12,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Trash2, Plus, ImageIcon, X } from "lucide-react";
 import { Spinner } from "@/components/Spinner";
 import { ProductImage } from "@/components/ProductImage";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function AdminProductsPage() {
   const dispatch = useAppDispatch();
   const { items: products, status, error } = useAppSelector((state) => state.products);
   const { user } = useAppSelector((state) => state.auth);
-  const [showForm, setShowForm] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
@@ -30,6 +37,7 @@ export default function AdminProductsPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageUploadStatus, setImageUploadStatus] = useState<"idle" | "loading" | "rejected">("idle");
+  const [deletingImageId, setDeletingImageId] = useState<number | null>(null);
 
   useEffect(() => {
     if (user?.role !== "ADMIN") return;
@@ -46,7 +54,7 @@ export default function AdminProductsPage() {
     setStock("");
     setDescription("");
     setEditingId(null);
-    setShowForm(false);
+    setFormOpen(false);
     setActionStatus("idle");
     setActionError("");
   };
@@ -76,7 +84,7 @@ export default function AdminProductsPage() {
     setPrice(product.price.toString());
     setStock(product.stock.toString());
     setDescription(product.description || "");
-    setShowForm(true);
+    setFormOpen(true);
   };
 
   const handleDelete = async (id: number) => {
@@ -126,11 +134,14 @@ export default function AdminProductsPage() {
   };
 
   const handleDeleteImage = async (productId: number) => {
+    setDeletingImageId(productId);
     try {
       await api(`/products/${productId}/image`, { method: "DELETE" });
       dispatch(fetchProducts());
     } catch (err: unknown) {
-      // handle error
+      setActionError(err instanceof Error ? err.message : "Delete image failed");
+    } finally {
+      setDeletingImageId(null);
     }
   };
 
@@ -153,7 +164,7 @@ export default function AdminProductsPage() {
           Manage Products
         </h1>
         <Button
-          onClick={() => { resetForm(); setShowForm(!showForm); }}
+          onClick={() => { resetForm(); setFormOpen(true); }}
           className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0"
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -165,49 +176,53 @@ export default function AdminProductsPage() {
         <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md mb-4">{actionError}</div>
       )}
 
-      {showForm && (
-        <Card className="mb-6 shadow-lg border-0">
-          <CardHeader>
-            <CardTitle>{editingId ? "Edit Product" : "New Product"}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="price">Price</Label>
-                <Input id="price" type="number" step="0.01" min="0" value={price} onChange={(e) => setPrice(e.target.value)} required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="stock">Stock</Label>
-                <Input id="stock" type="number" min="0" value={stock} onChange={(e) => setStock(e.target.value)} required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit" disabled={actionStatus === "loading"} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0">
-                  {actionStatus === "loading" ? (
-                    <span className="flex items-center gap-2">
-                      <Spinner className="w-4 h-4" />
-                      Saving...
-                    </span>
-                  ) : editingId ? "Update" : "Create"}
-                </Button>
-                <Button type="button" variant="outline" onClick={resetForm}>Cancel</Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+      <Dialog open={formOpen} onOpenChange={(open) => { if (!open) resetForm(); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingId ? "Edit Product" : "New Product"}</DialogTitle>
+            <DialogDescription>
+              {editingId ? "Update the product details below." : "Fill in the details to add a new product."}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="price">Price</Label>
+              <Input id="price" type="number" step="0.01" min="0" value={price} onChange={(e) => setPrice(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="stock">Stock</Label>
+              <Input id="stock" type="number" min="0" value={stock} onChange={(e) => setStock(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              />
+            </div>
+            {actionStatus === "rejected" && actionError && (
+              <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">{actionError}</div>
+            )}
+            <div className="flex gap-2 justify-end">
+              <Button type="button" variant="outline" onClick={resetForm}>Cancel</Button>
+              <Button type="submit" disabled={actionStatus === "loading"} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0">
+                {actionStatus === "loading" ? (
+                  <span className="flex items-center gap-2">
+                    <Spinner className="w-4 h-4" />
+                    Saving...
+                  </span>
+                ) : editingId ? "Update" : "Create"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <Card className="shadow-lg border-0">
         <CardContent className="p-0">
@@ -245,8 +260,8 @@ export default function AdminProductsPage() {
                         <ImageIcon className="w-4 h-4" />
                       </Button>
                       {product.image && (
-                        <Button variant="destructive" size="sm" onClick={() => handleDeleteImage(product.id)}>
-                          <Trash2 className="w-4 h-4" />
+                        <Button variant="destructive" size="sm" onClick={() => handleDeleteImage(product.id)} disabled={deletingImageId === product.id}>
+                          {deletingImageId === product.id ? <Spinner className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />}
                         </Button>
                       )}
                       <Button variant="destructive" size="sm" onClick={() => handleDelete(product.id)} disabled={actionStatus === "loading"}>

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
+    "@radix-ui/react-dialog": "^1.1.23",
     "@reduxjs/toolkit": "^2.13.0",
     "axios": "^1.20.0",
     "class-variance-authority": "^0.7.1",

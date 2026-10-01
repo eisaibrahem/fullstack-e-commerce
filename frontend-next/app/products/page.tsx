@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchProducts } from "@/store/productsSlice";
 import { addToCart } from "@/store/cartSlice";
@@ -15,14 +15,19 @@ export default function ProductsPage() {
   const dispatch = useAppDispatch();
   const { items: products, status, error } = useAppSelector((state) => state.products);
   const { isAuthenticated } = useAppSelector((state) => state.auth);
-  const { status: cartStatus } = useAppSelector((state) => state.cart);
+  const [addingId, setAddingId] = useState<number | null>(null);
 
   useEffect(() => {
     dispatch(fetchProducts());
   }, [dispatch]);
 
-  const handleAddToCart = (product: { id: number; name: string; price: number }) => {
-    dispatch(addToCart({ productId: product.id, quantity: 1 }));
+  const handleAddToCart = async (product: { id: number; name: string; price: number }) => {
+    setAddingId(product.id);
+    try {
+      await dispatch(addToCart({ productId: product.id, quantity: 1 })).unwrap();
+    } finally {
+      setAddingId(null);
+    }
   };
 
   if (status === "loading") {
@@ -79,10 +84,19 @@ export default function ProductsPage() {
                   <Button
                     className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-300"
                     onClick={() => handleAddToCart(product)}
-                    disabled={product.stock === 0 || cartStatus === "loading"}
+                    disabled={product.stock === 0 || addingId === product.id}
                   >
-                    <ShoppingCart className="w-4 h-4 mr-2" />
-                    Add to Cart
+                    {addingId === product.id ? (
+                      <span className="flex items-center gap-2">
+                        <Spinner className="w-4 h-4" />
+                        Adding...
+                      </span>
+                    ) : (
+                      <>
+                        <ShoppingCart className="w-4 h-4 mr-2" />
+                        Add to Cart
+                      </>
+                    )}
                   </Button>
                 ) : (
                   <p className="text-sm text-zinc-500 w-full text-center">Login to add to cart</p>

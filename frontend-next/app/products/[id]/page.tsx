@@ -29,6 +29,7 @@ export default function ProductDetailsPage() {
   const [error, setError] = useState("");
   const dispatch = useAppDispatch();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     api<Product>(`/products/${id}`)
@@ -37,9 +38,13 @@ export default function ProductDetailsPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  const handleAddToCart = () => {
-    if (product) {
-      dispatch(addToCart({ productId: product.id, quantity: 1 }));
+  const handleAddToCart = async () => {
+    if (!product) return;
+    setAdding(true);
+    try {
+      await dispatch(addToCart({ productId: product.id, quantity: 1 })).unwrap();
+    } finally {
+      setAdding(false);
     }
   };
 
@@ -93,10 +98,19 @@ export default function ProductDetailsPage() {
               <Button
                 className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-300"
                 onClick={handleAddToCart}
-                disabled={product.stock === 0}
+                disabled={product.stock === 0 || adding}
               >
-                <ShoppingCart className="w-4 h-4 mr-2" />
-                Add to Cart
+                {adding ? (
+                  <span className="flex items-center gap-2">
+                    <Spinner className="w-4 h-4" />
+                    Adding...
+                  </span>
+                ) : (
+                  <>
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    Add to Cart
+                  </>
+                )}
               </Button>
             ) : (
               <p className="text-sm text-zinc-500 text-center">
