@@ -9,6 +9,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { ShoppingCart } from "lucide-react";
 import { Spinner } from "@/components/Spinner";
 import { ProductImage } from "@/components/ProductImage";
+import Link from "next/link";
 
 export default function ProductsPage() {
   const dispatch = useAppDispatch();
@@ -51,17 +52,22 @@ export default function ProductsPage() {
               className="overflow-hidden group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-0 shadow-md"
             >
               <div className="relative h-48 overflow-hidden">
-                <ProductImage
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
+                <Link href={`/products/${product.id}`}>
+
+                  <ProductImage
+                    src={product.image}
+                    alt={product.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                </Link>
                 <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-medium text-zinc-700 shadow-sm">
                   Stock: {product.stock}
                 </div>
               </div>
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-semibold">{product.name}</CardTitle>
+                <Link href={`/products/${product.id}`}>
+                  <CardTitle className="text-lg font-semibold">{product.name}</CardTitle>
+                </Link>
               </CardHeader>
               <CardContent className="pb-2">
                 <p className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
