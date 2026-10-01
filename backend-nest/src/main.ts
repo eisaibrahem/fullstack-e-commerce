@@ -20,6 +20,7 @@ function assertRequiredEnv(): void {
     'CLOUDINARY_CLOUD_NAME',
     'CLOUDINARY_API_KEY',
     'CLOUDINARY_API_SECRET',
+    'CLOUDINARY_UPLOAD_PRESET',
   ].filter((key) => !process.env[key]?.trim());
   if (missing.length > 0) {
     throw new Error(`Missing required environment variable(s): ${missing.join(', ')}`);

@@ -47,12 +47,12 @@ export function ProductImage({
   }
 
   return (
-    <div className="relative w-full h-full">
+    <div className={`relative overflow-hidden ${className}`}>
       <Image
         src={src}
         fill
         alt={alt}
-        className={`w-full h-full object-cover ${className}`}
+        className="object-cover"
         onError={() => setError(true)}
       />
     </div>

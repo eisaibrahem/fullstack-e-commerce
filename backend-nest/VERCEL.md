@@ -19,6 +19,7 @@ Set in **Vercel → Project → Settings → Environment Variables** for Product
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary product environment cloud name |
 | `CLOUDINARY_API_KEY` | API key with **Upload assets (create)** permission |
 | `CLOUDINARY_API_SECRET` | Matching API secret |
+| `CLOUDINARY_UPLOAD_PRESET` | Unsigned upload preset name (e.g. `gr15asho`) — required for uploads when the API key lacks signed **create** permission |
 
 After changing env vars, redeploy the project.
 

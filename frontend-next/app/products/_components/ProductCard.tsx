@@ -19,7 +19,7 @@ export function ProductCard({ product, canBuy, adding, onAdd }: ProductCardProps
   return (
     <Card className="overflow-hidden pt-0! group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-0 shadow-md">
       <div className="relative h-48 overflow-hidden">
-        <Link href={`/products/${product.id}`}>
+        <Link href={`/products/${product.id}`} className="block w-full h-full">
           <ProductImage
             src={product.image}
             alt={product.name}

@@ -44,9 +44,14 @@ export class CloudinaryService {
       );
     }
 
+    const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET?.trim();
+    const uploadOptions = uploadPreset
+      ? { upload_preset: uploadPreset, folder, unsigned: true, resource_type: 'image' as const }
+      : { folder, resource_type: 'image' as const };
+
     return new Promise<{ url: string; publicId: string }>((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
-        { folder, resource_type: 'image' },
+        uploadOptions,
         (error, result) => {
           if (error) {
             const raw = error.message;
@@ -76,6 +81,13 @@ export class CloudinaryService {
     return new Promise<void>((resolve, reject) => {
       cloudinary.uploader.destroy(publicId, (error) => {
         if (error) {
+          if (error.message?.includes('403')) {
+            this.logger.warn(
+              `Cloudinary delete skipped (API key lacks delete permission): ${publicId}`,
+            );
+            resolve();
+            return;
+          }
           this.logger.error(`Cloudinary delete failed: ${error.message}`, error.stack);
           reject(new InternalServerErrorException(`Image delete failed: ${error.message}`));
         } else {
