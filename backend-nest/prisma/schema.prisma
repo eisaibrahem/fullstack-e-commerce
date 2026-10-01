@@ -19,13 +19,14 @@ model User {
 }
 
 model Product {
-  id         Int         @id @default(autoincrement())
-  name       String
-  price      Decimal     @db.Decimal(10, 2)
-  stock      Int         @default(0)
-  image      String?
-  orderItems OrderItem[]
-  cartItems  CartItem[]
+  id            Int         @id @default(autoincrement())
+  name          String
+  price         Decimal     @db.Decimal(10, 2)
+  stock         Int         @default(0)
+  image         String?
+  imagePublicId String?
+  orderItems    OrderItem[]
+  cartItems     CartItem[]
 }
 
 model Order {
