@@ -25,16 +25,33 @@ async function bootstrap() {
   assertRequiredEnv();
   const app = await NestFactory.create(AppModule);
 
+  // Swagger configuration
   const config = new DocumentBuilder()
     .setTitle('E-Commerce API')
     .setDescription('E-Commerce Backend API Documentation')
-    .setVersion('1.0')
-    .addBearerAuth()
+    .setVersion('1.0.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
+      'access-token',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
 
-  SwaggerModule.setup('docs', app, document);
+  SwaggerModule.setup('docs', app, document, {
+    customSiteTitle: 'E-Commerce API Docs',
+    customCssUrl:
+      'https://unpkg.com/swagger-ui-dist@5/swagger-ui.css',
+    customJs: [
+      'https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js',
+      'https://unpkg.com/swagger-ui-dist@5/swagger-ui-standalone-preset.js',
+    ],
+  });
+  // End of Swagger configuration
 
 
   app.enableCors({
