@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { parsePagination, buildMeta } from '../common/pagination.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 import { ChangePasswordDto } from './dto/change-password.dto.js';
@@ -17,8 +19,26 @@ export class UsersService {
     return this.prisma.user.create({ data: createUserDto });
   }
 
-  async findAll() {
-    return this.prisma.user.findMany();
+  async findAll(query: { page?: string; limit?: string }) {
+    const { page, limit, skip, take } = parsePagination(query, { defaultLimit: 10, maxLimit: 50 });
+
+    const select = {
+      id: true,
+      email: true,
+      role: true,
+      name: true,
+      phone: true,
+      image: true,
+      imagePublicId: true,
+      address: true,
+    } satisfies Prisma.UserSelect;
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.user.findMany({ select, skip, take, orderBy: { id: 'desc' } }),
+      this.prisma.user.count(),
+    ]);
+
+    return { items, meta: buildMeta(page, limit, total) };
   }
 
   async findOne(id: number) {

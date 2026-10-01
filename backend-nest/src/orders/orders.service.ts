@@ -1,5 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { parsePagination, buildMeta } from '../common/pagination.js';
 
 @Injectable()
 export class OrdersService {
@@ -61,12 +62,23 @@ export class OrdersService {
     return order;
   }
 
-  async findAll(userId: number) {
-    return this.prisma.order.findMany({
-      where: { userId },
-      include: { items: true },
-      orderBy: { createdAt: 'desc' },
-    });
+  async findAll(userId: number, query: { page?: string; limit?: string }) {
+    const { page, limit, skip, take } = parsePagination(query, { defaultLimit: 10, maxLimit: 50 });
+
+    const where = { userId };
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.order.findMany({
+        where,
+        include: { items: true },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+      }),
+      this.prisma.order.count({ where }),
+    ]);
+
+    return { items, meta: buildMeta(page, limit, total) };
   }
 
   async findOne(userId: number, id: number) {

@@ -100,3 +100,18 @@
 - [x] Shared ProductFilters component: search, sort, min/max price, in-stock only, reset
 - [x] Wired into public /products and admin /admin/products (client-side filtering)
 - [x] Backend + frontend builds pass
+
+---
+
+## Pagination (Complete)
+- [x] src/common/pagination.ts -- parsePagination (clamped) + buildMeta helper
+- [x] GET /products -- page, limit (12, max 50), search, sort, minPrice, maxPrice, inStock; Prisma skip/take +  count
+- [x] GET /orders -- page, limit (10, max 50), user-scoped
+- [x] GET /users -- page, limit (10, max 50); ALSO fixed: findAll no longer returns password/refreshTokenHash
+- [x] All return data: { items, meta: { page, limit, total, totalPages } }; @ApiQuery in Swagger
+- [x] Frontend: shadcn pagination added (base-nova), shared components/ListPagination.tsx
+- [x] Slices: meta in state, fetchProducts({page, filters}) / fetchOrders({page}), stale-response guard via requestId
+- [x] Filters moved server-side, 300ms search debounce, filter change resets to page 1
+- [x] Pages wired: /products, /admin/products, /orders -- list dimmed while loading, spinner only on first load
+- [x] hooks/use-debounced-value.ts added
+- [x] Backend + frontend builds pass; curl verified (page/meta/search/sort/inStock)

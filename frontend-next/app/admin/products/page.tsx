@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchProducts, createProduct, updateProduct, deleteProduct } from "@/store/productsSlice";
 import type { Product } from "@/store/productsSlice";
@@ -12,12 +12,14 @@ import { ProductFormDialog } from "./_components/ProductFormDialog";
 import type { ProductFormValues } from "./_components/ProductFormDialog";
 import { ProductsTable } from "./_components/ProductsTable";
 import { ImageUploadModal } from "./_components/ImageUploadModal";
-import { ProductFilters, filterProducts, defaultProductFilters } from "@/components/ProductFilters";
+import { ProductFilters, defaultProductFilters } from "@/components/ProductFilters";
 import type { ProductFiltersValue } from "@/components/ProductFilters";
+import { ListPagination } from "@/components/ListPagination";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 export default function AdminProductsPage() {
   const dispatch = useAppDispatch();
-  const { items: products, status, error } = useAppSelector((state) => state.products);
+  const { items: products, meta, status, error } = useAppSelector((state) => state.products);
   const { user } = useAppSelector((state) => state.auth);
 
   const [formOpen, setFormOpen] = useState(false);
@@ -25,20 +27,25 @@ export default function AdminProductsPage() {
   const [actionStatus, setActionStatus] = useState<"idle" | "loading" | "rejected">("idle");
   const [actionError, setActionError] = useState("");
   const [filters, setFilters] = useState<ProductFiltersValue>({ ...defaultProductFilters });
+  const [page, setPage] = useState(1);
+  const debouncedFilters = useDebouncedValue(filters, 300);
 
   const [imageModalProduct, setImageModalProduct] = useState<{ id: number; name: string } | null>(null);
   const [deletingImageId, setDeletingImageId] = useState<number | null>(null);
 
-  const visibleProducts = useMemo(() => filterProducts(products, filters), [products, filters]);
-
   useEffect(() => {
     if (user?.role !== "ADMIN") return;
-    dispatch(fetchProducts());
-  }, [dispatch, user]);
+    dispatch(fetchProducts({ page, filters: debouncedFilters }));
+  }, [dispatch, user, page, debouncedFilters]);
 
   if (user?.role !== "ADMIN") {
     return <div className="text-center py-12 text-red-500">Access denied. Admin only.</div>;
   }
+
+  const handleFiltersChange = (next: ProductFiltersValue) => {
+    setFilters(next);
+    setPage(1);
+  };
 
   const closeForm = () => {
     setEditingProduct(null);
@@ -55,6 +62,7 @@ export default function AdminProductsPage() {
         await dispatch(updateProduct({ id: editingProduct.id, data: values })).unwrap();
       } else {
         await dispatch(createProduct(values)).unwrap();
+        setPage(1);
       }
       closeForm();
     } catch (err: unknown) {
@@ -79,7 +87,7 @@ export default function AdminProductsPage() {
     setDeletingImageId(productId);
     try {
       await api(`/products/${productId}/image`, { method: "DELETE" });
-      dispatch(fetchProducts());
+      dispatch(fetchProducts({ page, filters: debouncedFilters }));
     } catch (err: unknown) {
       setActionError(err instanceof Error ? err.message : "Delete image failed");
     } finally {
@@ -87,7 +95,9 @@ export default function AdminProductsPage() {
     }
   };
 
-  if (status === "loading") {
+  const isLoadingFirstPage = status === "loading" && products.length === 0;
+
+  if (isLoadingFirstPage) {
     return (
       <div className="flex items-center justify-center py-12">
         <Spinner className="w-8 h-8 text-zinc-400" />
@@ -98,6 +108,13 @@ export default function AdminProductsPage() {
   if (status === "rejected") {
     return <div className="text-center py-12 text-red-500">{error}</div>;
   }
+
+  const hasActiveFilters =
+    filters.search !== "" ||
+    filters.minPrice !== "" ||
+    filters.maxPrice !== "" ||
+    filters.inStockOnly ||
+    filters.sort !== "newest";
 
   return (
     <div>
@@ -128,21 +145,36 @@ export default function AdminProductsPage() {
         onSubmit={handleSubmit}
       />
 
-      <ProductFilters value={filters} onChange={setFilters} />
+      <ProductFilters value={filters} onChange={handleFiltersChange} />
 
-      {visibleProducts.length === 0 ? (
+      {products.length === 0 ? (
         <p className="text-zinc-500">
-          {products.length === 0 ? "No products yet." : "No products match your filters."}
+          {hasActiveFilters && meta?.total === 0
+            ? "No products match your filters."
+            : "No products yet."}
         </p>
       ) : (
-        <ProductsTable
-          products={visibleProducts}
-          busyAction={actionStatus === "loading"}
-          deletingImageId={deletingImageId}
-          onEdit={(product) => { setEditingProduct(product); setActionError(""); setFormOpen(true); }}
-          onUploadImage={(product) => setImageModalProduct({ id: product.id, name: product.name })}
-          onDeleteImage={handleDeleteImage}
-          onDelete={handleDelete}
+        <div className={status === "loading" ? "opacity-60" : ""}>
+          <ProductsTable
+            products={products}
+            busyAction={actionStatus === "loading"}
+            deletingImageId={deletingImageId}
+            onEdit={(product) => { setEditingProduct(product); setActionError(""); setFormOpen(true); }}
+            onUploadImage={(product) => setImageModalProduct({ id: product.id, name: product.name })}
+            onDeleteImage={handleDeleteImage}
+            onDelete={handleDelete}
+          />
+        </div>
+      )}
+
+      {meta && (
+        <ListPagination
+          page={meta.page}
+          totalPages={meta.totalPages}
+          total={meta.total}
+          limit={meta.limit}
+          disabled={status === "loading"}
+          onPageChange={setPage}
         />
       )}
 
@@ -150,7 +182,7 @@ export default function AdminProductsPage() {
         <ImageUploadModal
           product={imageModalProduct}
           onClose={() => setImageModalProduct(null)}
-          onUploaded={() => dispatch(fetchProducts())}
+          onUploaded={() => dispatch(fetchProducts({ page, filters: debouncedFilters }))}
         />
       )}
     </div>

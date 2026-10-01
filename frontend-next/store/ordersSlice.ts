@@ -2,6 +2,7 @@
 
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { api } from "@/lib/api";
+import type { Paginated, PaginationMeta } from "./productsSlice";
 
 export interface OrderItem {
   id: number;
@@ -19,21 +20,24 @@ export interface Order {
 
 interface OrdersState {
   items: Order[];
+  meta: PaginationMeta | null;
   status: "idle" | "loading" | "fulfilled" | "rejected";
   error: string | null;
 }
 
 const initialState: OrdersState = {
   items: [],
+  meta: null,
   status: "idle",
   error: null,
 };
 
 export const fetchOrders = createAsyncThunk(
   "orders/fetchAll",
-  async (_, { rejectWithValue }) => {
+  async (args: { page?: number } = {}, { rejectWithValue }) => {
     try {
-      return await api<Order[]>("/orders");
+      const page = args.page ?? 1;
+      return await api<Paginated<Order>>(`/orders?page=${page}&limit=10`);
     } catch (err: unknown) {
       return rejectWithValue(err instanceof Error ? err.message : "Failed to fetch orders");
     }
@@ -50,9 +54,10 @@ const ordersSlice = createSlice({
         state.status = "loading";
         state.error = null;
       })
-      .addCase(fetchOrders.fulfilled, (state, action: PayloadAction<Order[]>) => {
+      .addCase(fetchOrders.fulfilled, (state, action: PayloadAction<Paginated<Order>>) => {
         state.status = "fulfilled";
-        state.items = action.payload;
+        state.items = action.payload.items;
+        state.meta = action.payload.meta;
       })
       .addCase(fetchOrders.rejected, (state, action) => {
         state.status = "rejected";

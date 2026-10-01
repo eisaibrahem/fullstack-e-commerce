@@ -3,7 +3,6 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
-import type { Product } from "@/store/productsSlice";
 
 export type SortKey = "newest" | "price-asc" | "price-desc" | "name-asc";
 
@@ -22,32 +21,6 @@ export const defaultProductFilters: ProductFiltersValue = {
   maxPrice: "",
   inStockOnly: false,
 };
-
-export function filterProducts(products: Product[], filters: ProductFiltersValue): Product[] {
-  const search = filters.search.trim().toLowerCase();
-  const min = filters.minPrice === "" ? null : Number(filters.minPrice);
-  const max = filters.maxPrice === "" ? null : Number(filters.maxPrice);
-
-  const filtered = products.filter((product) => {
-    const price = Number(product.price);
-    if (search && !product.name.toLowerCase().includes(search)) return false;
-    if (min !== null && !Number.isNaN(min) && price < min) return false;
-    if (max !== null && !Number.isNaN(max) && price > max) return false;
-    if (filters.inStockOnly && product.stock <= 0) return false;
-    return true;
-  });
-
-  switch (filters.sort) {
-    case "price-asc":
-      return [...filtered].sort((a, b) => Number(a.price) - Number(b.price));
-    case "price-desc":
-      return [...filtered].sort((a, b) => Number(b.price) - Number(a.price));
-    case "name-asc":
-      return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
-    default:
-      return filtered;
-  }
-}
 
 interface ProductFiltersProps {
   value: ProductFiltersValue;
