@@ -50,8 +50,7 @@ export function ProductImage({
     <div className="relative w-full h-full">
       <Image
         src={src}
-        width={100}
-        height={100}
+        fill
         alt={alt}
         className={`w-full h-full object-cover ${className}`}
         onError={() => setError(true)}
