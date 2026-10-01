@@ -5,7 +5,7 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { logout } from "@/store/authSlice";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Package, ClipboardList, LogOut, Shield } from "lucide-react";
+import { ShoppingCart, Package, ClipboardList, LogOut, Shield, User } from "lucide-react";
 
 export function Navbar() {
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
@@ -37,6 +37,10 @@ export function Navbar() {
               <Link href="/orders" className="text-sm text-zinc-600 hover:text-zinc-900 flex items-center gap-1">
                 <ClipboardList className="w-4 h-4" />
                 My Orders
+              </Link>
+              <Link href="/profile" className="text-sm text-zinc-600 hover:text-zinc-900 flex items-center gap-1">
+                <User className="w-4 h-4" />
+                Profile
               </Link>
             </>
           )}

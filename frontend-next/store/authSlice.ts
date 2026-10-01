@@ -7,6 +7,10 @@ interface User {
   id: number;
   email: string;
   role: string;
+  name?: string;
+  phone?: string;
+  image?: string;
+  address?: string;
 }
 
 interface AuthState {
@@ -43,7 +47,7 @@ export const login = createAsyncThunk(
 
 export const register = createAsyncThunk(
   "auth/register",
-  async (data: { email: string; password: string; role: string }, { rejectWithValue }) => {
+  async (data: { email: string; password: string; role: string; name: string; phone?: string; address?: string }, { rejectWithValue }) => {
     try {
       await api("/auth/register", {
         method: "POST",
@@ -84,6 +88,10 @@ const authSlice = createSlice({
         state.user = JSON.parse(userStr);
         state.isAuthenticated = true;
       }
+    },
+    setUser: (state, action: PayloadAction<User>) => {
+      state.user = action.payload;
+      localStorage.setItem("user", JSON.stringify(action.payload));
     },
   },
   extraReducers: (builder) => {
@@ -127,5 +135,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, loadFromStorage } = authSlice.actions;
+export const { logout, loadFromStorage, setUser } = authSlice.actions;
 export default authSlice.reducer;

@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchProducts, createProduct, updateProduct, deleteProduct } from "@/store/productsSlice";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, ImageIcon, X } from "lucide-react";
 import { Spinner } from "@/components/Spinner";
 import { ProductImage } from "@/components/ProductImage";
 
@@ -21,9 +22,14 @@ export default function AdminProductsPage() {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("");
-  const [image, setImage] = useState("");
+  const [description, setDescription] = useState("");
   const [actionStatus, setActionStatus] = useState<"idle" | "loading" | "rejected">("idle");
   const [actionError, setActionError] = useState("");
+
+  const [imageModal, setImageModal] = useState<{ productId: number; productName: string } | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageUploadStatus, setImageUploadStatus] = useState<"idle" | "loading" | "rejected">("idle");
 
   useEffect(() => {
     if (user?.role !== "ADMIN") return;
@@ -38,7 +44,7 @@ export default function AdminProductsPage() {
     setName("");
     setPrice("");
     setStock("");
-    setImage("");
+    setDescription("");
     setEditingId(null);
     setShowForm(false);
     setActionStatus("idle");
@@ -51,7 +57,7 @@ export default function AdminProductsPage() {
     setActionError("");
 
     try {
-      const data = { name, price: parseFloat(price), stock: parseInt(stock), image: image || undefined };
+      const data = { name, price: parseFloat(price), stock: parseInt(stock), description };
       if (editingId) {
         await dispatch(updateProduct({ id: editingId, data })).unwrap();
       } else {
@@ -64,12 +70,12 @@ export default function AdminProductsPage() {
     }
   };
 
-  const handleEdit = (product: { id: number; name: string; price: number; stock: number; image?: string }) => {
+  const handleEdit = (product: { id: number; name: string; price: number; stock: number; description?: string }) => {
     setEditingId(product.id);
     setName(product.name);
     setPrice(product.price.toString());
     setStock(product.stock.toString());
-    setImage(product.image || "");
+    setDescription(product.description || "");
     setShowForm(true);
   };
 
@@ -82,6 +88,49 @@ export default function AdminProductsPage() {
       setActionError(err instanceof Error ? err.message : "Delete failed");
     } finally {
       setActionStatus("idle");
+    }
+  };
+
+  const openImageModal = (product: { id: number; name: string }) => {
+    setImageModal({ productId: product.id, productName: product.name });
+    setImageFile(null);
+    setImagePreview(null);
+    setImageUploadStatus("idle");
+  };
+
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleUploadImage = async () => {
+    if (!imageFile || !imageModal) return;
+    setImageUploadStatus("loading");
+    try {
+      const formData = new FormData();
+      formData.append("image", imageFile);
+      await api(`/products/${imageModal.productId}/image`, {
+        method: "POST",
+        body: formData,
+      });
+      setImageModal(null);
+      setImageFile(null);
+      setImagePreview(null);
+      dispatch(fetchProducts());
+    } catch (err: unknown) {
+      setImageUploadStatus("rejected");
+    }
+  };
+
+  const handleDeleteImage = async (productId: number) => {
+    try {
+      await api(`/products/${productId}/image`, { method: "DELETE" });
+      dispatch(fetchProducts());
+    } catch (err: unknown) {
+      // handle error
     }
   };
 
@@ -136,8 +185,13 @@ export default function AdminProductsPage() {
                 <Input id="stock" type="number" min="0" value={stock} onChange={(e) => setStock(e.target.value)} required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="image">Image URL (optional)</Label>
-                <Input id="image" type="url" value={image} onChange={(e) => setImage(e.target.value)} placeholder="https://example.com/image.jpg" />
+                <Label htmlFor="description">Description</Label>
+                <textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                />
               </div>
               <div className="flex gap-2">
                 <Button type="submit" disabled={actionStatus === "loading"} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0">
@@ -187,6 +241,14 @@ export default function AdminProductsPage() {
                       <Button variant="outline" size="sm" onClick={() => handleEdit(product)}>
                         Edit
                       </Button>
+                      <Button variant="outline" size="sm" onClick={() => openImageModal(product)}>
+                        <ImageIcon className="w-4 h-4" />
+                      </Button>
+                      {product.image && (
+                        <Button variant="destructive" size="sm" onClick={() => handleDeleteImage(product.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
                       <Button variant="destructive" size="sm" onClick={() => handleDelete(product.id)} disabled={actionStatus === "loading"}>
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -198,6 +260,52 @@ export default function AdminProductsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {imageModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4 shadow-2xl">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Upload Image — {imageModal.productName}</CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => setImageModal(null)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="border-2 border-dashed rounded-lg p-4 text-center">
+                {imagePreview ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={imagePreview} alt="Preview" className="w-full h-48 object-cover rounded-lg" />
+                ) : (
+                  <div className="h-48 flex items-center justify-center text-zinc-400">
+                    <ImageIcon className="w-12 h-12" />
+                  </div>
+                )}
+              </div>
+              <Input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImageFileChange} />
+              {imageUploadStatus === "rejected" && (
+                <p className="text-sm text-red-600">Upload failed. Please try again.</p>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0"
+                  onClick={handleUploadImage}
+                  disabled={!imageFile || imageUploadStatus === "loading"}
+                >
+                  {imageUploadStatus === "loading" ? (
+                    <span className="flex items-center gap-2">
+                      <Spinner className="w-4 h-4" />
+                      Uploading...
+                    </span>
+                  ) : (
+                    "Upload"
+                  )}
+                </Button>
+                <Button variant="outline" onClick={() => setImageModal(null)}>Cancel</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
